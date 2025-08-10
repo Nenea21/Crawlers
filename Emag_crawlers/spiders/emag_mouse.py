@@ -50,7 +50,7 @@ class EmagMouseSpider(scrapy.Spider):
         item = MouseItem()
         # Info passed from listing page
         item['name'] = response.meta.get('name')
-        item['URL'] = response.meta.get('url')
+        item['URL'] = response.meta.get('url')  # Use 'URL' (uppercase) to match MouseItem definition
         item['price'] = response.meta.get('price')
 
         # Specs on the product page + clean the space at the end of the specs
@@ -58,10 +58,11 @@ class EmagMouseSpider(scrapy.Spider):
             text = response.xpath(xpath_expr).get()
             return text.strip() if text else None
         
-        item['tip'] = response.xpath("//tr[td[contains(text(), 'Tip')]]/td[2]/text()").get()
-        item['interfata_mouse'] = response.xpath("//tr[td[contains(text(), 'Interfata mouse')]]/td[2]/text()").get()
-        item['interfata_receiver'] = response.xpath("//tr[td[contains(text(), 'Interfata receiver')]]/td[2]/text()").get()
-        item['tehnologie'] = response.xpath("//tr[td[contains(text(), 'Tehnologie')]]/td[2]/text()").get()
-        item['culoare'] = response.xpath("//tr[td[contains(text(), 'Culoare')]]/td[2]/text()").get()
+        # Apply the cleaning function to all specs
+        item['tip'] = clean_info("//tr[td[contains(text(), 'Tip')]]/td[2]/text()")
+        item['interfata_mouse'] = clean_info("//tr[td[contains(text(), 'Interfata mouse')]]/td[2]/text()")
+        item['interfata_receiver'] = clean_info("//tr[td[contains(text(), 'Interfata receiver')]]/td[2]/text()")
+        item['tehnologie'] = clean_info("//tr[td[contains(text(), 'Tehnologie')]]/td[2]/text()")
+        item['culoare'] = clean_info("//tr[td[contains(text(), 'Culoare')]]/td[2]/text()")
 
         yield item

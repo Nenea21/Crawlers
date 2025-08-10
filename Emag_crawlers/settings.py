@@ -12,6 +12,10 @@ BOT_NAME = "Emag_crawlers"
 SPIDER_MODULES = ["Emag_crawlers.spiders"]
 NEWSPIDER_MODULE = "Emag_crawlers.spiders"
 
+FEEDS = {
+    'mousedata.json': {'format': 'json'}
+} 
+
 ADDONS = {}
 
 
@@ -65,7 +69,7 @@ ROBOTSTXT_OBEY = True
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    "Emag_crawlers.pipelines.EmagCrawlersPipeline": 300,
+    "Emag_crawlers.pipelines.SaveToPSQL": 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
