@@ -1,4 +1,5 @@
 import scrapy
+import re
 from ..items import MouseItem
 
 class EmagMouseSpider(scrapy.Spider):
@@ -10,6 +11,7 @@ class EmagMouseSpider(scrapy.Spider):
 
     def parse(self, response):
         mice = response.css('div.card-item.js-product-data')
+        
         for mouse in mice:
             name = mouse.css('a.card-v2-title::text').get()
             url = mouse.css('a.card-v2-title::attr(href)').get()
@@ -34,13 +36,16 @@ class EmagMouseSpider(scrapy.Spider):
                     'url': response.urljoin(url)
                 })
 
-        # Next page
         next_page = response.css('a.js-change-page[aria-label="Next"]::attr(href)').get()
         if next_page:
-            yield response.follow(next_page, callback = self.parse)
+            yield response.follow(next_page, callback=self.parse)
 
+    def extract_brand_from_product_page(self, response): 
+        brand = response.css("div.disclaimer-section p a::text").get()
+        if brand and brand.strip():
+            return brand.strip()
+        
     def parse_mouse_page(self, response):
-        # Check if item is in stock
         in_stock = response.css('span.label-in_stock')
         out_of_stock = response.css('span.label-out_of_stock')
         
@@ -48,17 +53,27 @@ class EmagMouseSpider(scrapy.Spider):
             return
         
         item = MouseItem()
-        # Info passed from listing page
         item['name'] = response.meta.get('name')
-        item['URL'] = response.meta.get('url')  # Use 'URL' (uppercase) to match MouseItem definition
+        item['URL'] = response.meta.get('url')
         item['price'] = response.meta.get('price')
+        
+        # Extract brand from product page
+        item['brand'] = self.extract_brand_from_product_page(response)
+        
+        # If still no brand, try extracting from product name
+        if not item['brand']:
+            page_name = response.css('h1.page-title::text').get() or response.css('h1::text').get()
+            if page_name:
+                item['brand'] = self.extract_brand_from_name(page_name)
+            elif item['name']:
+                item['brand'] = self.extract_brand_from_name(item['name'])
 
-        # Specs on the product page + clean the space at the end of the specs
+        # Clean specification extraction function
         def clean_info(xpath_expr):
             text = response.xpath(xpath_expr).get()
             return text.strip() if text else None
         
-        # Apply the cleaning function to all specs
+        # Extract specifications
         item['tip'] = clean_info("//tr[td[contains(text(), 'Tip')]]/td[2]/text()")
         item['interfata_mouse'] = clean_info("//tr[td[contains(text(), 'Interfata mouse')]]/td[2]/text()")
         item['interfata_receiver'] = clean_info("//tr[td[contains(text(), 'Interfata receiver')]]/td[2]/text()")

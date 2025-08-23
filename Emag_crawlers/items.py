@@ -14,6 +14,7 @@ class EmagCrawlersItem(scrapy.Item):
 
 class MouseItem(scrapy.Item):
     name = scrapy.Field()
+    brand = scrapy.Field()
     URL = scrapy.Field()
     price = scrapy.Field()
     tip = scrapy.Field()

@@ -20,7 +20,6 @@ from itemadapter import ItemAdapter
 class SaveToPSQL:
     def open_spider(self, spider):
         try:
-            # Connect to PostgreSQL
             self.conn = psycopg2.connect(
                 host="localhost",
                 database="Scraped_data",
@@ -40,7 +39,6 @@ class SaveToPSQL:
             else:
                 raise Exception("Failed to get table name from procedure")
 
-            # Verify if table exists
             self.cursor.execute("""
                 SELECT EXISTS (
                     SELECT FROM information_schema.tables 
@@ -71,18 +69,28 @@ class SaveToPSQL:
     def process_item(self, item, spider):
         insert_query = f"""
         INSERT INTO {self.table_name} (
-            name, url, price, tip,
+            name, brand, url, price, tip,
             interfata_mouse, interfata_receiver,
             tehnologie, culoare
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
         """
         try:
-            price_str = str(item.get('price')) if item.get('price') is not None else None
+            price_value = item.get('price')
+            if price_value is not None:
+                try:
+                    price_float = float(price_value)
+                    spider.logger.debug(f"[Postgres] Converted price {price_value} to float: {price_float}")
+                except (ValueError, TypeError):
+                    spider.logger.warning(f"[Postgres] Invalid price value: {price_value}, setting to None")
+                    price_float = None
+            else:
+                price_float = None
             
             self.cursor.execute(insert_query, (
                 item.get('name'),
+                item.get('brand'),
                 item.get('URL'),
-                price_str,
+                price_float,  
                 item.get('tip'),
                 item.get('interfata_mouse'),
                 item.get('interfata_receiver'),
@@ -90,7 +98,7 @@ class SaveToPSQL:
                 item.get('culoare')
             ))
             self.conn.commit()
-            spider.logger.info(f"[Postgres] Successfully inserted item: {item.get('name')}")
+            spider.logger.info(f"[Postgres] Successfully inserted item: {item.get('name')} - Price: {price_float}")
 
         except Exception as e:
             spider.logger.error(f"[Postgres] Failed to insert item: {e} | Item: {dict(item)}")
