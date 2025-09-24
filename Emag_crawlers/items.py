@@ -22,3 +22,21 @@ class MouseItem(scrapy.Item):
     interfata_receiver = scrapy.Field()
     tehnologie = scrapy.Field()
     culoare = scrapy.Field()
+
+class CPU_item(scrapy.Item):
+    pass
+
+class GPU_item(scrapy.Item):
+    pass
+
+class MB_item(scrapy.Item):
+    pass
+
+class RAM_item(scrapy.Item):
+    pass
+
+class PSU_item(scrapy.Item):
+    pass
+
+class SSD_item(scrapy.Item):
+    pass
